@@ -324,3 +324,4 @@
 /Users/artemsmedlaev/RiderProjects/TestTask/TestTask/obj/Debug/net8.0/staticwebassets/msbuild.buildMultiTargeting.TestTask.props
 /Users/artemsmedlaev/RiderProjects/TestTask/TestTask/obj/Debug/net8.0/staticwebassets/msbuild.buildTransitive.TestTask.props
 /Users/artemsmedlaev/RiderProjects/TestTask/TestTask/obj/Debug/net8.0/staticwebassets.pack.json
+/Users/artemsmedlaev/RiderProjects/TestTask/TestTask/obj/Debug/net8.0/TestTask.sourcelink.json

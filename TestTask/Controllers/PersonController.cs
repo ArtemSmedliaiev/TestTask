@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -23,6 +24,45 @@ namespace TestTask.Controllers
         public async Task<IActionResult> Index()
         {
             return View(await _context.Person.ToListAsync());
+        }
+        
+        public IActionResult GetAll()
+        {
+            var people = _context.Person.ToList();
+            return Json(people); // <- повертає JSON
+        }
+        
+        public async Task<IActionResult> UploadFile(IFormFile csvFile)
+        {
+            if (csvFile == null || csvFile.Length == 0)
+                return BadRequest("No file selected");
+
+            using (var reader = new StreamReader(csvFile.OpenReadStream()))
+            {
+                // Пропускаємо заголовок
+                var headerLine = reader.ReadLine();
+
+                while (!reader.EndOfStream)
+                {
+                    var line = reader.ReadLine();
+                    var values = line.Split(',');
+
+                    var person = new Person
+                    {
+                        Name = values[0],
+                        Date = DateTime.Parse(values[1]),
+                        Married = bool.Parse(values[2]),
+                        Phone = values[3],
+                        Salary = decimal.Parse(values[4], CultureInfo.InvariantCulture)
+                    };
+
+                    _context.Person.Add(person);
+                }
+
+                _context.SaveChanges();
+            }
+
+            return RedirectToAction("Index"); // Повертаємось на сторінку з таблицею
         }
 
         // GET: Person/Details/5
@@ -116,6 +156,22 @@ namespace TestTask.Controllers
             return View(person);
         }
 
+        [HttpPost]
+        public IActionResult Update([FromBody] Person updated)
+        {
+            var person = _context.Person.Find(updated.Id);
+            if(person == null) return NotFound();
+
+            person.Name = updated.Name;
+            person.Date = updated.Date;
+            person.Married = updated.Married;
+            person.Phone = updated.Phone;
+            person.Salary = updated.Salary;
+
+            _context.SaveChanges();
+            return Json(new { success = true });
+        }
+        
         // GET: Person/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
@@ -147,6 +203,17 @@ namespace TestTask.Controllers
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
+        }
+        
+        [HttpPost]
+        public IActionResult Delete(int id)
+        {
+            var person = _context.Person.Find(id);
+            if(person == null) return NotFound();
+
+            _context.Person.Remove(person);
+            _context.SaveChanges();
+            return Ok();
         }
 
         private bool PersonExists(int id)

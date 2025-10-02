@@ -1,59 +1,117 @@
 @model IEnumerable<TestTask.Models.Person>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "CSV info";
 }
 
-<h1>Index</h1>
+<div class = title>
+    Your CSV file info
+</div>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
+<div id = "filter_button" class=button-container>
+    <div class = button>
+        Filter
+    </div>
+</div>
+
+<table id="personTable">
     <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Name)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Date)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Married)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Phone)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Salary)
-            </th>
-            <th></th>
-        </tr>
+    <tr>
+        <th>Name</th>
+        <th>Date of Birth</th>
+        <th>Married</th>
+        <th>Phone</th>
+        <th>Salary</th>
+        <th>Actions</th>
+    </tr>
     </thead>
     <tbody>
-@foreach (var item in Model) {
-        <tr>
+    @foreach(var person in Model)
+    {
+        <tr data-id="@person.Id">
+            <td class="editable" data-field="Name">@person.Name</td>
+            <td class="editable" data-field="Date">@person.Date.ToString("yyyy-MM-dd")</td>
+            <td class="editable" data-field="Married">@person.Married</td>
+            <td class="editable" data-field="Phone">@person.Phone</td>
+            <td class="editable" data-field="Salary">@person.Salary</td>
             <td>
-                @Html.DisplayFor(modelItem => item.Name)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Date)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Married)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Phone)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Salary)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                <button class="saveBtn">Save</button>
+                <button class="deleteBtn">Delete</button>
             </td>
         </tr>
-}
+    }
     </tbody>
 </table>
+<div class=button-container>
+    <form id="uploadForm" enctype="multipart/form-data" method="post" asp-controller="Person" asp-action="UploadFile">
+        <label for="csvFile" class="button">Choose CSV</label>
+        <input type="file" id="csvFile" name="csvFile" accept=".csv" style="display:none;"/>
+        <button type="submit" id="upload_button" class="button">Upload CSV</button>
+    </form>
+    <div id="creation_button" class=button>
+        Create New
+    </div>
+</div>
+
+@section Scripts{
+    <script>
+        document.getElementById("creation_button").addEventListener("click", function(){
+            window.location.href = '@Url.Action("Create", "Person")';
+        })
+        document.getElementById("upload_button").addEventListener("click", function(){
+            window.location.href = '@Url.Action("UploadFile", "Person")';
+        })
+        document.getElementById("upload_button").addEventListener("click", function(){
+            window.location.href = '@Url.Action("UploadFile", "Person")';
+        })
+        document.addEventListener("DOMContentLoaded", function() {
+            document.querySelectorAll(".editable").forEach(td => {
+                td.addEventListener("click", function() {
+                    let currentValue = this.innerText;
+                    let input = document.createElement("input");
+                    input.value = currentValue;
+                    input.style.width = "100%";
+                    this.innerText = "";
+                    this.appendChild(input);
+                    input.focus();
+                    input.addEventListener("blur", () => {
+                        this.innerText = input.value;
+                    });
+                });
+            });
+
+            document.querySelectorAll(".saveBtn").forEach(btn => {
+                btn.addEventListener("click", function() {
+                    let row = this.closest("tr");
+                    let id = row.dataset.id;
+                    let data = {};
+                    row.querySelectorAll(".editable").forEach(td => {
+                        data[td.dataset.field] = td.innerText;
+                    });
+
+                    fetch('/Person/Update', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ Id: id, ...data })
+                    }).then(res => res.json())
+                        .then(res => alert("Saved!"))
+                        .catch(err => alert("Error!"));
+                });
+            });
+
+            document.querySelectorAll(".deleteBtn").forEach(btn => {
+                btn.addEventListener("click", function() {
+                    if(!confirm("Are you sure?")) return;
+                    let row = this.closest("tr");
+                    let id = row.dataset.id;
+
+                    fetch('/Person/Delete/' + id, { method: 'POST' })
+                        .then(res => {
+                            if(res.ok) row.remove();
+                        });
+                });
+            });
+
+        });
+    </script>
+}
